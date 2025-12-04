@@ -1,0 +1,40 @@
+name: Prebuild
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # Aciona o workflow quando uma tag como v1.0.0 é criada
+
+jobs:
+  build:
+    name: Create Prebuilds and Release
+    runs-on: windows-latest # Queremos compilar para Windows
+
+    strategy:
+      matrix:
+        node-version: [18.x] # Compilamos com uma versão LTS do Node
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Create prebuilds
+        run: pnpm run prebuild # Executa o script que configuramos
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: prebuilds/* # Anexa todos os binários da pasta 'prebuilds' à release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
